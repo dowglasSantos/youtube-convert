@@ -58,7 +58,7 @@ O projeto utiliza o `yt-dlp` com suporte a runtime JavaScript e componentes EJS.
 Clone o repositório:
 
 ```bash
-git clone URL_DO_SEU_REPOSITORIO
+git clone https://github.com/dowglasSantos/youtube-convert
 ```
 
 Entre na pasta do projeto:
