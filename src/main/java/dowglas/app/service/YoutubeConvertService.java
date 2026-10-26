@@ -1,18 +1,28 @@
 package dowglas.app.service;
 
+import ch.qos.logback.classic.Logger;
 import dowglas.app.exception.DownloadErrorException;
 import dowglas.app.exception.ProcessBuilderException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
+@Slf4j
 @Service
 public class YoutubeConvertService {
     public String convert(String url) throws ProcessBuilderException {
-        String outputPath = System.getProperty("user.home") + "/Downloads/%(title)s.%(ext)s";
+        String downloadDir = System.getenv()
+                .getOrDefault("DOWNLOAD_DIR",
+                        System.getProperty("user.home") + "/Downloads");
+
+        String outputPath = downloadDir + "/%(title)s.%(ext)s";
+
+        String ytDlpPath = System.getenv()
+                .getOrDefault("YT_DLP_PATH", "yt-dlp");
 
         ProcessBuilder processBuilder = new ProcessBuilder(
-                "/home/huemay/.local/bin/yt-dlp",
+                ytDlpPath,
                 "--js-runtimes", "deno",
                 "--remote-components", "ejs:npm",
                 "-x",
@@ -25,6 +35,10 @@ public class YoutubeConvertService {
         processBuilder.redirectErrorStream(true);
 
         try{
+            java.nio.file.Files.createDirectories(
+                    java.nio.file.Path.of(downloadDir)
+            );
+
             Process process = processBuilder.start();
 
             String output;
@@ -41,8 +55,8 @@ public class YoutubeConvertService {
 
             int exitCode = process.waitFor();
 
-            System.out.println("Erro/Saída do yt-dlp:\n" + output);
-            System.out.println("Exit code: " + exitCode);
+            log.info("Erro/Saída do yt-dlp:\n" + output);
+            log.info("Exit code: " + exitCode);
 
             if(exitCode != 0) {
                throw new DownloadErrorException("Erro ao baixar e converter o vídeo!! exitCode={} " + exitCode);
@@ -50,14 +64,9 @@ public class YoutubeConvertService {
 
             return url;
         } catch (IOException e) {
-            throw new ProcessBuilderException(
-                    "Não foi possível iniciar o yt-dlp: " + e.getMessage()
-            );
+            throw new ProcessBuilderException("Não foi possível iniciar o yt-dlp: " + e.getMessage());
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ProcessBuilderException(
-                    "A execução foi interrompida."
-            );
+            Thread.currentThread().interrupt();throw new ProcessBuilderException("A execução foi interrompida.");
         }
     }
 }
