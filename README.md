@@ -1,47 +1,136 @@
 # YouTube Convert 🎵
 
-API REST desenvolvida com Java e Spring Boot para baixar e converter vídeos do YouTube em arquivos de áudio MP3, utilizando o `yt-dlp` para realizar o download e o `FFmpeg` para auxiliar na conversão.
+API REST desenvolvida com Java e Spring Boot para baixar e converter vídeos do YouTube em arquivos de áudio MP3, utilizando o `yt-dlp` para extração do áudio e o FFmpeg para conversão.
 
-O projeto foi desenvolvido para praticar integração entre aplicações Java e processos externos do sistema operacional, manipulação de requisições HTTP e tratamento de exceções.
+O projeto foi desenvolvido para praticar desenvolvimento backend, integração entre aplicações Java e processos externos do sistema operacional, manipulação de requisições HTTP, tratamento de exceções e conteinerização com Docker.
 
 ## 🚀 Tecnologias utilizadas
 
-- **Java** — linguagem de programação.
+- **Java 17** — linguagem de programação.
 - **Spring Boot** — desenvolvimento da API REST.
-- **Maven** — gerenciamento de dependências e build do projeto.
-- **yt-dlp** — download e extração de áudio dos vídeos.
-- **Deno** — runtime JavaScript utilizado pelo `yt-dlp` para resolver desafios de extração do YouTube.
+- **Maven** — gerenciamento de dependências e build.
+- **yt-dlp** — download e extração de áudio.
+- **Deno** — runtime JavaScript utilizado pelo `yt-dlp` quando necessário.
 - **FFmpeg** — processamento e conversão de áudio.
-- **Postman** — testes das requisições HTTP.
+- **Docker** — empacotamento e execução da aplicação em containers.
+- **Postman** — testes de requisições HTTP.
 
 ## ⚙️ Funcionalidades
 
-- Receber URLs de vídeos por meio de requisições HTTP.
-- Baixar o áudio dos vídeos do YouTube.
+- Receber URLs de vídeos por requisições HTTP.
+- Extrair o áudio de vídeos disponíveis.
 - Converter o áudio para MP3.
-- Configurar a qualidade do áudio em 192 Kbps.
-- Salvar os arquivos convertidos no diretório `Downloads` do usuário.
-- Executar comandos externos por meio da classe `ProcessBuilder`.
-- Tratar erros durante a execução do processo de download e conversão.
+- Configurar a qualidade de áudio em 192 Kbps.
+- Executar processos externos com `ProcessBuilder`.
+- Configurar o diretório de saída por variável de ambiente.
+- Tratar falhas durante o download e a conversão.
+- Executar a aplicação em um container Docker.
 
 ## 📋 Pré-requisitos
 
-Antes de executar o projeto, instale:
+Para executar a aplicação localmente, você precisará de:
 
-- Java compatível com a versão configurada no projeto.
-- Maven, caso não utilize o Maven Wrapper.
+- Java 17.
+- Maven ou Maven Wrapper.
 - `yt-dlp`.
 - Deno.
 - FFmpeg.
 
-No Ubuntu, o FFmpeg pode ser instalado com:
+Para executar com Docker, você precisará de:
+
+- Docker Engine instalado e em execução.
+
+## 🐳 Executando com Docker
+
+A aplicação possui um `Dockerfile` com duas etapas: uma para compilar o projeto Java e outra para criar o ambiente de execução com as dependências necessárias.
+
+### 1. Clonar o repositório
+
+```bash
+git clone https://github.com/dowglasSantos/youtube-convert.git
+cd youtube-convert
+```
+
+### 2. Construir a imagem
+
+```bash
+docker build -t youtube-convert:1.0 .
+```
+
+### 3. Criar o diretório de downloads
+
+No Linux:
+
+```bash
+mkdir -p ~/youtube-convert-downloads
+```
+
+### 4. Executar o container
+
+```bash
+docker run -d \
+  --name youtube-convert \
+  -p 8080:8081 \
+  -e DOWNLOAD_DIR=/downloads \
+  -v ~/youtube-convert-downloads:/downloads \
+  youtube-convert:1.0
+```
+
+A aplicação Spring Boot utiliza a porta `8081` dentro do container. A opção `-p 8080:8081` disponibiliza a API na porta `8080` do computador.
+
+Os arquivos convertidos ficam no diretório `~/youtube-convert-downloads` do computador, preservados mesmo quando o container é removido.
+
+### 5. Verificar a execução
+
+Consultar os containers:
+
+```bash
+docker ps
+```
+
+Consultar os logs da aplicação:
+
+```bash
+docker logs -f youtube-convert
+```
+
+Parar o container:
+
+```bash
+docker stop youtube-convert
+```
+
+Iniciar novamente:
+
+```bash
+docker start youtube-convert
+```
+
+Remover o container:
+
+```bash
+docker rm -f youtube-convert
+```
+
+A remoção do container não remove a imagem nem os arquivos já salvos no diretório montado no computador.
+
+## 💻 Executando localmente
+
+### 1. Instalar as dependências do sistema
+
+No Ubuntu, instale o FFmpeg:
 
 ```bash
 sudo apt update
 sudo apt install ffmpeg
 ```
 
-Para verificar as ferramentas instaladas:
+Instale também o `yt-dlp` e o Deno, seguindo as instruções oficiais:
+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- [Deno](https://docs.deno.com/runtime/)
+
+Verifique as instalações:
 
 ```bash
 java -version
@@ -51,45 +140,33 @@ ffmpeg -version
 yt-dlp --version
 ```
 
-O projeto utiliza o `yt-dlp` com suporte a runtime JavaScript e componentes EJS. Consulte a [documentação oficial do yt-dlp](https://github.com/yt-dlp/yt-dlp) para obter instruções de instalação e atualização.
+### 2. Compilar a aplicação
 
-## 📥 Instalação
-
-Clone o repositório:
+Na raiz do projeto:
 
 ```bash
-git clone https://github.com/dowglasSantos/youtube-convert
+./mvnw clean package
 ```
 
-Entre na pasta do projeto:
+### 3. Executar a aplicação
 
 ```bash
-cd youtube-convert
+./mvnw spring-boot:run
 ```
 
-Compile a aplicação:
-
-```bash
-mvn clean package
-```
-
-Execute o projeto:
-
-```bash
-mvn spring-boot:run
-```
-
-A porta utilizada depende da configuração da aplicação, definida normalmente em `application.properties` ou `application.yml`.
+A aplicação utiliza a porta `8081` conforme a configuração atual identificada nos logs de inicialização.
 
 ## 🔗 Como utilizar a API
 
-As requisições podem ser realizadas pelo Postman.
+A API recebe requisições HTTP para iniciar o processo de conversão.
 
-Envie uma requisição `POST` para o endpoint de conversão configurado no controller, utilizando o corpo no formato JSON:
+Utilize o Postman ou outra ferramenta HTTP para enviar uma requisição `POST` ao endpoint configurado no controller.
+
+Exemplo de corpo JSON:
 
 ```json
 {
-  "url": "https://youtu.be/ID_DO_VIDEO"
+  "url": "https://www.youtube.com/watch?v=ID_DO_VIDEO"
 }
 ```
 
@@ -99,73 +176,86 @@ Configure o cabeçalho:
 Content-Type: application/json
 ```
 
-Substitua a URL de exemplo pelo endereço do vídeo que deseja converter.
+Substitua a URL de exemplo pelo endereço do conteúdo que você tem autorização para baixar.
 
-**Observação:** o caminho do endpoint e o formato exato da resposta dependem da implementação atual do controller.
+**Observação:** consulte o controller para confirmar o caminho exato do endpoint e o formato da resposta. A rota não é especificada neste README porque precisa corresponder à implementação atual.
 
 ## 🛠️ Como funciona
 
-O fluxo de execução da aplicação é o seguinte:
-
-1. O cliente envia uma requisição HTTP com a URL do vídeo.
-2. O controller recebe os dados e encaminha a URL ao serviço.
-3. O serviço configura o `ProcessBuilder` para executar o `yt-dlp`.
-4. O `yt-dlp` obtém o áudio do vídeo, utilizando o runtime JavaScript quando necessário.
-5. O áudio é convertido para MP3 com a qualidade configurada.
-6. O arquivo final é salvo no diretório `Downloads`.
-7. O serviço verifica o código de saída do processo e trata eventuais falhas.
+1. O cliente envia uma requisição HTTP contendo a URL do vídeo.
+2. O controller recebe os dados e encaminha a solicitação ao service.
+3. O service prepara o comando externo utilizando `ProcessBuilder`.
+4. O `yt-dlp` processa a URL e extrai o áudio.
+5. O FFmpeg realiza a conversão para MP3.
+6. O arquivo é salvo no diretório configurado.
+7. A aplicação verifica o resultado do processo e trata possíveis falhas.
 
 ## 📂 Diretório de saída
 
-Por padrão, os arquivos são salvos em:
+O diretório de saída é configurado pela variável de ambiente `DOWNLOAD_DIR`.
+
+Por padrão, quando a variável não está definida, a aplicação utiliza:
 
 ```text
-/home/usuario/Downloads/
+<diretório pessoal do usuário>/Downloads
 ```
 
-O caminho é definido a partir do diretório pessoal do usuário que executa a aplicação.
+No Docker, o diretório configurado é:
+
+```text
+/downloads
+```
+
+Com o volume montado no exemplo anterior, os arquivos ficam disponíveis no computador em:
+
+```text
+~/youtube-convert-downloads/
+```
 
 O nome do arquivo é gerado com base no título do vídeo.
 
 ## ⚠️ Tratamento de erros
 
-A aplicação considera possíveis falhas durante a execução do processo externo, como:
+A aplicação pode encontrar falhas como:
 
-- `yt-dlp` não encontrado ou sem permissão de execução.
+- `yt-dlp` ausente ou sem permissão de execução.
 - URL inválida ou vídeo indisponível.
-- Falhas de rede ou respostas HTTP como `403 Forbidden`.
-- Ausência de dependências necessárias à conversão.
-- Interrupção do processo durante a execução.
+- Problemas de rede ou bloqueios de acesso.
+- Dependências de conversão ausentes.
+- Falhas na execução ou interrupção do processo externo.
 
-O código de saída do processo é utilizado para identificar se a execução foi concluída com sucesso.
+O código de saída do processo é utilizado para verificar se a execução foi concluída com sucesso.
 
 ## 🔒 Uso responsável
 
-Utilize o projeto somente com conteúdos que você tenha autorização para baixar e converter, respeitando os direitos autorais, os termos de serviço da plataforma e a legislação aplicável.
+Utilize o projeto apenas com conteúdos que você tenha autorização para baixar e converter. Respeite os direitos autorais, os termos de serviço da plataforma e a legislação aplicável.
 
 ## 📚 Objetivos de aprendizagem
 
-Este projeto permite praticar conceitos importantes do desenvolvimento backend com Java:
+Este projeto permite praticar:
 
-- Criação de APIs REST com Spring Boot.
+- Desenvolvimento de APIs REST com Spring Boot.
 - Separação de responsabilidades entre controller e service.
-- Recebimento e validação de dados JSON.
+- Recebimento de dados JSON.
 - Execução de processos externos com `ProcessBuilder`.
-- Captura de saída e códigos de retorno de programas externos.
+- Captura da saída e do código de retorno de processos.
 - Tratamento de exceções.
 - Integração entre Java e ferramentas de linha de comando.
 - Testes de endpoints com Postman.
+- Conteinerização de aplicações Java com Docker.
+- Persistência de arquivos por meio de volumes Docker.
 
 ## 🗺️ Melhorias futuras
 
-- Retornar o caminho exato do arquivo gerado.
 - Disponibilizar um endpoint para baixar o MP3 pela própria API.
 - Implementar validação de URLs.
-- Melhorar o tratamento de erros e as mensagens HTTP.
+- Melhorar o tratamento de erros e os códigos HTTP.
 - Implementar logs estruturados.
 - Adicionar testes unitários com JUnit e Mockito.
-- Permitir configurar a pasta de saída e a qualidade do áudio.
+- Permitir configurar a qualidade do áudio.
+- Implementar testes automatizados no processo de build.
+- Criar uma interface web integrada à API.
 
 ## 👨‍💻 Autor
 
-Desenvolvido como projeto de estudo para aprofundar conhecimentos em Java, Spring Boot e integração com processos externos.
+Desenvolvido como projeto de estudo para aprofundar conhecimentos em Java, Spring Boot, integração com processos externos e Docker.
